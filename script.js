@@ -244,4 +244,138 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 5000);
   }
 
+  /* ── CHAT WIDGET ──────────────────────────── */
+  const chatWidget  = document.getElementById('chat-widget');
+  const chatToggle  = document.getElementById('chat-toggle');
+  const chatClose   = document.getElementById('chat-close');
+  const chatWindow  = document.getElementById('chat-window');
+  const chatBody    = document.getElementById('chat-body');
+  const qrButtons   = document.querySelectorAll('.qr-btn');
+
+  let greeted = false; // show welcome only once per session
+
+  /* ── Responses map ────────────────────────── */
+  const RESPONSES = {
+    rooms:
+      'Our rooms include split AC, free high-speed WiFi, premium bedding, clean attached bathrooms, and daily housekeeping. We have Deluxe, Standard, and Executive Suite options. 🛏',
+    amenities:
+      'We offer free WiFi throughout the property, 24/7 room service, round-the-clock CCTV security, daily housekeeping, quick check-in/out, and a prime location near key areas. ✨',
+    location:
+      'We are conveniently located near APMC Market, Kalyan. Easy access to local transport, markets, and major attractions. 📍',
+    booking:
+      'You can book directly by calling us:\n📞 8451848400  or  9004771777\n\nOur front desk is available 24/7 to assist you!',
+    food:
+      'Food service is available at the property. Several popular restaurants and eateries are also located nearby for your convenience. 🍽',
+  };
+
+  /* ── Helpers ──────────────────────────────── */
+  const getTime = () => {
+    const d = new Date();
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const scrollToBottom = () => {
+    chatBody.scrollTop = chatBody.scrollHeight;
+  };
+
+  const addMessage = (text, role) => {
+    const wrap = document.createElement('div');
+    wrap.className = `chat-msg ${role}`;
+
+    const bubble = document.createElement('div');
+    bubble.className = 'chat-bubble';
+    bubble.textContent = text;
+
+    const time = document.createElement('span');
+    time.className = 'chat-time';
+    time.textContent = getTime();
+
+    wrap.appendChild(bubble);
+    wrap.appendChild(time);
+    chatBody.appendChild(wrap);
+    scrollToBottom();
+  };
+
+  const showTyping = () => {
+    const wrap = document.createElement('div');
+    wrap.className = 'chat-msg bot';
+    wrap.id = 'typing-wrap';
+
+    const indicator = document.createElement('div');
+    indicator.className = 'typing-indicator';
+    indicator.innerHTML = `
+      <span class="typing-dot"></span>
+      <span class="typing-dot"></span>
+      <span class="typing-dot"></span>
+    `;
+
+    wrap.appendChild(indicator);
+    chatBody.appendChild(wrap);
+    scrollToBottom();
+  };
+
+  const removeTyping = () => {
+    const el = document.getElementById('typing-wrap');
+    if (el) el.remove();
+  };
+
+  const botReply = (text, delay = 1200) => {
+    showTyping();
+    setTimeout(() => {
+      removeTyping();
+      addMessage(text, 'bot');
+    }, delay);
+  };
+
+  /* ── Open / Close ─────────────────────────── */
+  const openChat = () => {
+    chatWidget.classList.add('is-open');
+    chatToggle.setAttribute('aria-expanded', 'true');
+    chatToggle.setAttribute('aria-label', 'Close chat');
+    chatWindow.setAttribute('aria-hidden', 'false');
+
+    // Show welcome message only the first time
+    if (!greeted) {
+      greeted = true;
+      setTimeout(() => {
+        botReply('Hi! 👋 Welcome to Metro Inn Residency. How can I help you today?', 600);
+      }, 300);
+    }
+  };
+
+  const closeChat = () => {
+    chatWidget.classList.remove('is-open');
+    chatToggle.setAttribute('aria-expanded', 'false');
+    chatToggle.setAttribute('aria-label', 'Open chat');
+    chatWindow.setAttribute('aria-hidden', 'true');
+  };
+
+  chatToggle.addEventListener('click', () => {
+    chatWidget.classList.contains('is-open') ? closeChat() : openChat();
+  });
+
+  chatClose.addEventListener('click', closeChat);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && chatWidget.classList.contains('is-open')) {
+      closeChat();
+      chatToggle.focus();
+    }
+  });
+
+  /* ── Quick Reply buttons ──────────────────── */
+  qrButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const key = btn.dataset.key;
+      const label = btn.textContent.trim();
+
+      // Show user bubble
+      addMessage(label, 'user');
+
+      // Bot responds after typing delay
+      const response = RESPONSES[key] || "Sorry, I didn't understand that. Please try another option.";
+      botReply(response, 1300);
+    });
+  });
+
 });
